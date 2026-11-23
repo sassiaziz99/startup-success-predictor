@@ -65,30 +65,43 @@ def build_labels(objects, rounds):
     followon_rounds = rounds[rounds["funding_round_type"].isin(followon_types)]
     companies_with_followon = set(followon_rounds["object_id"].unique())
 
-    early_rounds["label"] = early_rounds["object_id"].isin(companies_with_followon).astype(int)
+    early_rounds["label"] = (
+        early_rounds["object_id"].isin(companies_with_followon).astype(int)
+    )
 
     merged = early_rounds.merge(objects, on="object_id", how="left")
 
     merged["founded_at"] = pd.to_datetime(merged["founded_at"], errors="coerce")
-    merged["years_to_angel"] = merged["funded_at"].dt.year - merged["founded_at"].dt.year
+    merged["years_to_angel"] = (
+        merged["funded_at"].dt.year - merged["founded_at"].dt.year
+    )
 
-    merged = merged.rename(columns={
-        "raised_amount_usd": "angel_amount_usd",
-        "funded_at": "angel_date",
-    })
+    merged = merged.rename(
+        columns={
+            "raised_amount_usd": "angel_amount_usd",
+            "funded_at": "angel_date",
+        }
+    )
 
-    result = merged[[
-        "object_id", "name", "category_code", "country_code",
-        "founded_at", "angel_date", "angel_amount_usd",
-        "years_to_angel", "label"
-    ]]
+    result = merged[
+        [
+            "object_id",
+            "name",
+            "category_code",
+            "country_code",
+            "founded_at",
+            "angel_date",
+            "angel_amount_usd",
+            "years_to_angel",
+            "label",
+        ]
+    ]
 
     # Fill missing categorical values with "unknown" instead of dropping rows
     result["category_code"] = result["category_code"].fillna("unknown")
     result["country_code"] = result["country_code"].fillna("unknown")
 
     return result
-
 
 
 def main():

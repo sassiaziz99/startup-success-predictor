@@ -32,18 +32,24 @@ TARGET = "label"
 
 
 def build_preprocessor():
-    numeric_pipeline = Pipeline([
-        ("impute", SimpleImputer(strategy="median")),
-        ("scale", StandardScaler()),
-    ])
-    categorical_pipeline = Pipeline([
-        ("impute", SimpleImputer(strategy="constant", fill_value="unknown")),
-        ("onehot", OneHotEncoder(handle_unknown="ignore")),
-    ])
-    return ColumnTransformer([
-        ("num", numeric_pipeline, NUMERIC_FEATURES),
-        ("cat", categorical_pipeline, CATEGORICAL_FEATURES),
-    ])
+    numeric_pipeline = Pipeline(
+        [
+            ("impute", SimpleImputer(strategy="median")),
+            ("scale", StandardScaler()),
+        ]
+    )
+    categorical_pipeline = Pipeline(
+        [
+            ("impute", SimpleImputer(strategy="constant", fill_value="unknown")),
+            ("onehot", OneHotEncoder(handle_unknown="ignore")),
+        ]
+    )
+    return ColumnTransformer(
+        [
+            ("num", numeric_pipeline, NUMERIC_FEATURES),
+            ("cat", categorical_pipeline, CATEGORICAL_FEATURES),
+        ]
+    )
 
 
 def evaluate(name, model, X_test, y_test):
@@ -51,7 +57,9 @@ def evaluate(name, model, X_test, y_test):
     probs = model.predict_proba(X_test)[:, 1]
 
     print(f"\n=== {name} ===")
-    print(classification_report(y_test, preds, target_names=["no follow-on", "follow-on"]))
+    print(
+        classification_report(y_test, preds, target_names=["no follow-on", "follow-on"])
+    )
     print(f"ROC-AUC: {roc_auc_score(y_test, probs):.3f}")
     print("Confusion matrix:")
     print(confusion_matrix(y_test, preds))
@@ -69,7 +77,9 @@ def main():
     preprocessor = build_preprocessor()
 
     models = {
-        "Logistic Regression": LogisticRegression(class_weight="balanced", max_iter=1000),
+        "Logistic Regression": LogisticRegression(
+            class_weight="balanced", max_iter=1000
+        ),
         "Random Forest": RandomForestClassifier(
             n_estimators=300, class_weight="balanced", random_state=42
         ),
@@ -80,10 +90,12 @@ def main():
     best_name = None
 
     for name, clf in models.items():
-        pipeline = Pipeline([
-            ("preprocess", preprocessor),
-            ("classifier", clf),
-        ])
+        pipeline = Pipeline(
+            [
+                ("preprocess", preprocessor),
+                ("classifier", clf),
+            ]
+        )
         pipeline.fit(X_train, y_train)
         evaluate(name, pipeline, X_test, y_test)
 
@@ -99,21 +111,25 @@ def main():
 
     # Feature importances from the Random Forest (trained separately here,
     # regardless of which model "won", since it's the interpretable one)
-    rf_pipeline = Pipeline([
-        ("preprocess", preprocessor),
-        ("classifier", RandomForestClassifier(
-            n_estimators=300, class_weight="balanced", random_state=42
-        )),
-    ])
+    rf_pipeline = Pipeline(
+        [
+            ("preprocess", preprocessor),
+            (
+                "classifier",
+                RandomForestClassifier(
+                    n_estimators=300, class_weight="balanced", random_state=42
+                ),
+            ),
+        ]
+    )
     rf_pipeline.fit(X_train, y_train)
 
     feature_names = rf_pipeline.named_steps["preprocess"].get_feature_names_out()
     importances = rf_pipeline.named_steps["classifier"].feature_importances_
 
-    importance_df = pd.DataFrame({
-        "feature": feature_names,
-        "importance": importances
-    }).sort_values("importance", ascending=False)
+    importance_df = pd.DataFrame(
+        {"feature": feature_names, "importance": importances}
+    ).sort_values("importance", ascending=False)
 
     print("\nTop 15 most important features (Random Forest):")
     print(importance_df.head(15).to_string(index=False))

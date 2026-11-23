@@ -4,4 +4,7 @@ __pycache__/
 .env
 .ipynb_checkpoints/
 data/*.csv
-.DS_Store
+.DS_Storesssss/
+models/model.joblib
+venv/
+venv/
